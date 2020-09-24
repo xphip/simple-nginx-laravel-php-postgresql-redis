@@ -1,1 +1,1 @@
-# simple-nginx-php-postgresql-redis
+# simple-nginx-laravel-php-postgresql-redis
