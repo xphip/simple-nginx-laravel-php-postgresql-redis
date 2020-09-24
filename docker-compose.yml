@@ -1,0 +1,65 @@
+version: '3'
+services:
+    nginx:
+        build:
+            context: .
+            dockerfile: docker/.dockerfile/nginx/Dockerfile
+            args:
+                - APP_NAME
+                - APP_STAGE
+        image: "${APP_NAME}_nginx:latest"
+        restart: always
+        ports:
+            - 80:80
+        volumes:
+            - ${APP_DIR}/src:/var/www/${APP_NAME}
+            - ${APP_DIR}/${SOCK_PATH}
+            - ${APP_DIR}/${NGINX_ROOT}/nginx.conf:/etc/nginx/nginx.conf
+            - ${APP_DIR}/${NGINX_ROOT}/fastcgi_params:/etc/nginx/fastcgi_params
+            - ${APP_DIR}/${NGINX_ROOT}/sites-enabled/default.conf:/etc/nginx/sites-enabled/default
+        environment:
+            STAGE: ${APP_STAGE}
+        depends_on:
+            - php-fpm
+    php-fpm:
+        build:
+            context: .
+            dockerfile: docker/.dockerfile/php-fpm/Dockerfile
+            args:
+                - APP_NAME
+                - APP_STAGE
+        image: "${APP_NAME}_php-fpm:latest"
+        restart: always
+        volumes:
+            - ${APP_DIR}/src:/var/www/${APP_NAME}
+            - ${APP_DIR}/${SOCK_PATH}
+            - ${APP_DIR}/${PHP_FPM_ROOT}/php.ini:/etc/php/7.4/fpm/php.ini"
+            - ${APP_DIR}/${PHP_FPM_ROOT}/php-fpm.conf:/etc/php/7.4/fpm/php-fpm.conf
+            - ${APP_DIR}/${PHP_FPM_ROOT}/pool.d/www.conf:/etc/php/7.4/fpm/pool.d/www.conf
+        depends_on:
+            - postgres
+    postgres:
+        build:
+            context: .
+            dockerfile: docker/.dockerfile/postgresql/Dockerfile
+            args:
+                - APP_NAME
+                - DB_USER
+                - DB_PASSWORD
+        image: "${APP_NAME}_postgresql:latest"
+        restart: always
+        ports:
+            - 5432:5432
+        volumes:
+            - ${APP_DIR}/${SOCK_PATH}
+            - ${APP_DIR}/${POSTGRESQL_ROOT}/postgresql.conf:/etc/postgresql/12/main/postgresql.conf
+            - ${APP_DIR}/${POSTGRESQL_ROOT}/pg_hba.conf:/etc/postgresql/12/main/pg_hba.conf
+        environment:
+            DB_USER: ${DB_USER}
+            DB_PASSWORD: ${DB_PASSWORD}
+    # redis:
+        # image: "redis:alpine"
+        # restart: always
+        # volumes:
+            # - "${PWD}/docker/etc/redis:/etc/redis"
+            # - "${PWD}/docker/var/run/redis:/var/run/redis"
